@@ -1,19 +1,31 @@
-﻿using CurstomersApi.Dtos;
-using Microsoft.EntityFrameworkCore;
+﻿using CustomersApi.Dtos;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore;
 
-namespace CurstomersApi.Repositories
+namespace CustomersApi.Repositories
 {
     public class CustomerDatabaseContext : DbContext
     {
-        public CustomerDatabaseContext(DbContextOptions<CustomerDatabaseContext> options) : base(options)
+        public CustomerDatabaseContext(DbContextOptions<CustomerDatabaseContext> options)
+            : base(options)
         {
 
         }
+
+
         public DbSet<CustomerEntity> Customer { get; set; }
-        public async Task<CustomerEntity> Get(long id)
+
+        public async Task<CustomerEntity?> Get(long id)
         {
-            return await Customer.FirstAsync(x => x.Id == id);
+            return await Customer.FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task<bool> Delete(long id)
+        {
+            CustomerEntity entity = await Get(id);
+            Customer.Remove(entity);
+            SaveChanges();
+            return true;
         }
 
         public async Task<CustomerEntity> Add(CreateCustomerDto customerDto)
@@ -27,11 +39,23 @@ namespace CurstomersApi.Repositories
                 LastName = customerDto.LastName,
                 Phone = customerDto.Phone,
             };
+
             EntityEntry<CustomerEntity> response = await Customer.AddAsync(entity);
             await SaveChangesAsync();
-            return await Get(response.Entity.Id ?? throw new Exception("No se ha podido conectar"));
+            return await Get((long)response.Entity.Id);
         }
+
+
+        public async Task<bool> Actualizar(CustomerEntity customerEntity)
+        {
+            Customer.Update(customerEntity);
+            await SaveChangesAsync();
+
+            return true;
+        }
+
     }
+
 
     public class CustomerEntity
     {
@@ -42,6 +66,7 @@ namespace CurstomersApi.Repositories
         public string Phone { get; set; }
         public string Address { get; set; }
 
+
         public CustomerDto ToDto()
         {
             return new CustomerDto()
@@ -51,7 +76,7 @@ namespace CurstomersApi.Repositories
                 FirstName = FirstName,
                 LastName = LastName,
                 Phone = Phone,
-                Id = Id ?? throw new Exception("El id no puede ser null")
+                Id = Id ?? throw new Exception("el id no puede ser null")
             };
         }
     }

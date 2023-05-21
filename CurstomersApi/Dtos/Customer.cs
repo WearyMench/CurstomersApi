@@ -1,4 +1,4 @@
-﻿namespace CurstomersApi.Dtos
+﻿namespace CustomersApi.Dtos
 {
     public class CustomerDto
     {
